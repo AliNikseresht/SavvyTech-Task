@@ -33,24 +33,29 @@ const Layout = () => {
 
   const handleSubmit = useCallback(
     async (data: ItemFormData) => {
+      const { title, subtitle } = data;
+
+      if (!title.trim() || !subtitle.trim()) {
+        toast.error("Both title and subtitle are required!");
+        return;
+      }
+
       try {
         if (modalState.item) {
-          const hasChanges =
-            data.title !== modalState.item.title ||
-            data.subtitle !== modalState.item.subtitle;
-          if (!hasChanges) {
-            toast("No changes detected.", { icon: "ℹ️" });
-            return;
-          }
-          await editItem({ id: modalState.item.id, ...data });
+          await editItem({
+            id: modalState.item.id,
+            title,
+            subtitle,
+          });
           toast.success("Item updated successfully!");
         } else {
-          await addItem(data);
+          await addItem({ title, subtitle });
           toast.success("Item created successfully!");
         }
         closeModal();
       } catch (error) {
         toast.error("Something went wrong. Please try again.");
+        console.error(error);
       }
     },
     [modalState.item, addItem, editItem, closeModal]
@@ -62,9 +67,9 @@ const Layout = () => {
       <div className="min-h-screen flex flex-col items-center gap-4 w-full">
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3 px-2.5 md:px-5 md:py-3">
           {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <ItemCardSkeleton key={i} />
-            ))
+            Array.from({ length: Math.max(items?.length || 0, 6) }).map(
+              (_, i) => <ItemCardSkeleton key={i} />
+            )
           ) : items.length === 0 ? (
             <div className="col-span-full text-center text-gray-500 py-10">
               There are no items. Please create one first.
